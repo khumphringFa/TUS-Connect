@@ -34,7 +34,8 @@ function redirect_with_status($filterStatus, $page, $type, $message)
         'message' => $message,
     ];
 
-    header("Location: " . $_SERVER['PHP_SELF'] . "?status=" . urlencode($filterStatus) . "&page=" . (int)$page);
+    $scriptPath = $_SERVER['SCRIPT_NAME'] ?? 'leave_approvals.php';
+    header("Location: " . $scriptPath . "?status=" . urlencode($filterStatus) . "&page=" . (int)$page);
     exit();
 }
 
@@ -90,10 +91,10 @@ if (!empty($_SESSION['leave_approval_flash'])) {
 // HANDLE APPROVE/REJECT APPLICATION
 // ========================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['decision'])) {
-    $csrfToken = $_POST['csrf_token'] ?? '';
+    $csrfToken = isset($_POST['csrf_token']) && is_string($_POST['csrf_token']) ? $_POST['csrf_token'] : '';
     $app_id = (int)($_POST['application_id'] ?? 0);
-    $decision = trim($_POST['decision']);
-    $comments = trim($_POST['comments'] ?? '');
+    $decision = is_string($_POST['decision']) ? trim($_POST['decision']) : '';
+    $comments = isset($_POST['comments']) && is_string($_POST['comments']) ? trim($_POST['comments']) : '';
 
     if (!hash_equals($_SESSION['leave_approval_csrf'], $csrfToken)) {
         redirect_with_status($filterStatus, $page, 'error', "Invalid request token!");
