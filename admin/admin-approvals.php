@@ -125,12 +125,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['decision'])) {
                                 $balance_update = mysqli_prepare($conn, "
                                     UPDATE leave_balances
                                     SET balance = balance - ?
-                                    WHERE user_id = ? AND leave_type = ? AND year = YEAR(CURDATE())
+                                    WHERE user_id = ?
+                                        AND leave_type = ?
+                                        AND year = YEAR(CURDATE())
+                                        AND balance >= ?
                                 ");
 
                                 if ($balance_update) {
-                                    mysqli_stmt_bind_param($balance_update, "iis", $app_days, $app_user_id, $app_leave_type);
-                                    $balanceUpdated = mysqli_stmt_execute($balance_update);
+                                    mysqli_stmt_bind_param($balance_update, "disd", $app_days, $app_user_id, $app_leave_type, $app_days);
+                                    $balanceUpdated = mysqli_stmt_execute($balance_update)
+                                        && mysqli_stmt_affected_rows($balance_update) === 1;
                                     mysqli_stmt_close($balance_update);
                                 } else {
                                     $balanceUpdated = false;
@@ -159,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['decision'])) {
                                     $error = "Error saving application review.";
                                 }
                             } else {
-                                $error = "Error updating leave balance.";
+                                $error = "Unable to approve leave because the employee does not have enough available balance.";
                             }
                         } else {
                             $error = "Application could not be updated. It may have already been reviewed.";
